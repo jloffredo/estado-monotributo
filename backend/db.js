@@ -102,7 +102,7 @@ export function getEscalas() {
   return db
     .prepare(
       `SELECT
-        categoria                AS numero_escala,
+        categoria                AS categoria,
         ingresos_brutos_anuales_max,
         cuota_total_locaciones   AS cuota_total_locaciones_y_servicios
        FROM escalas
