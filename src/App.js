@@ -1,25 +1,29 @@
-import logo from './logo.svg';
-import './App.css';
+import "./App.css";
+import EscalasMonotributo from "./component/EscalasMonotributo";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import RootLayout from "./component/RootLayout";
+import Facturacion from "./component/Facturacion";
+import NuevaFactura, { nuevaFacturaAction } from "./component/NuevaFactura";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <RootLayout />,
+    children: [
+      { id: "escalas", index: true, element: <EscalasMonotributo /> },
+      { id: "facturas", path: "facturas", element: <Facturacion /> },
+      {
+        id: "nueva_factura",
+        path: "facturas/nueva",
+        element: <NuevaFactura />,
+        action: nuevaFacturaAction,
+      },
+    ],
+  },
+]);
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
