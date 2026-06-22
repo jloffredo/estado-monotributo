@@ -49,8 +49,8 @@ const EscalasMonotributo = () => {
         <div>Sin datos. Presioná "Sincronizar con AFIP".</div>
       ) : (
         escalas.map((e) => (
-          <div key={e.numero_escala}>
-            <div>Categoría: {e.numero_escala}</div>
+          <div key={e.categoria}>
+            <div>Categoría: {e.categoria}</div>
             <div>Facturación máx: {e.ingresos_brutos_anuales_max}</div>
             <div>Cuota: {e.cuota_total_locaciones_y_servicios}</div>
           </div>
