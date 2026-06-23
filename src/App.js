@@ -11,12 +11,18 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { id: "escalas", index: true, element: <EscalasMonotributo /> },
-      { id: "facturas", path: "facturas", element: <Facturacion /> },
       {
-        id: "nueva_factura",
-        path: "facturas/nueva",
-        element: <NuevaFactura />,
-        action: nuevaFacturaAction,
+        id: "facturas",
+        path: "facturas",
+        children: [
+          { id: "lista", index: true, element: <Facturacion /> },
+          {
+            id: "nuevaFacturaForm",
+            path: "nueva",
+            element: <NuevaFactura />,
+            action: nuevaFacturaAction,
+          },
+        ],
       },
     ],
   },
