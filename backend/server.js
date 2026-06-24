@@ -15,7 +15,7 @@ async function sincronizarEscalas() {
     const { vigencia, categorias } = await obtenerCategoriasMonotributo();
     upsertEscalas(vigencia, categorias);
     console.log(
-      `Escalas sincronizadas: ${categorias.length} categorías (${vigencia})`
+      `Escalas sincronizadas: ${categorias.length} categorías (${vigencia})`,
     );
   } catch (err) {
     console.error("Error sincronizando escalas:", err.message);
@@ -58,9 +58,7 @@ app.post("/api/facturas", (req, res) => {
     return res.status(400).json({ error: "destinatario es requerido" });
 
   if (typeof monto !== "number" || monto <= 0)
-    return res
-      .status(400)
-      .json({ error: "monto debe ser un número positivo" });
+    return res.status(400).json({ error: "monto debe ser un número positivo" });
 
   try {
     const result = insertFactura(tipo, fecha, destinatario.trim(), monto);
@@ -71,7 +69,7 @@ app.post("/api/facturas", (req, res) => {
 });
 
 // GET /api/facturas?modo=anual&anio=2024
-// GET /api/facturas?modo=semestral&anio=2024   → 01/07/{anio} - 30/06/{anio+1}
+// GET /api/facturas?modo=semestral&anio=2024   → 01/07/{anio-1} - 30/06/{anio}
 app.get("/api/facturas", (req, res) => {
   const { modo, anio } = req.query;
 
@@ -84,10 +82,8 @@ app.get("/api/facturas", (req, res) => {
     return res.status(400).json({ error: "anio debe ser un año de 4 dígitos" });
 
   const year = parseInt(anio, 10);
-  const desde =
-    modo === "anual" ? `${year}-01-01` : `${year}-07-01`;
-  const hasta =
-    modo === "anual" ? `${year}-12-31` : `${year + 1}-06-30`;
+  const desde = modo === "anual" ? `${year}-01-01` : `${year - 1}-07-01`;
+  const hasta = modo === "anual" ? `${year}-12-31` : `${year}-06-30`;
 
   try {
     const facturas = getFacturas(desde, hasta);

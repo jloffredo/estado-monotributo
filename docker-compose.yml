@@ -30,6 +30,19 @@ services:
       - backend
     restart: unless-stopped
 
+  sqlite-web:
+    image: coleifer/sqlite-web
+    ports:
+      - "8090:8080"
+    volumes:
+      - sqlite_data:/data
+    environment:
+      - SQLITE_DATABASE=/data/monotributo.db
+    command: sqlite_web --host 0.0.0.0 /data/monotributo.db
+    networks:
+      - internal
+    restart: unless-stopped
+
 networks:
   internal:
     driver: bridge

@@ -1,17 +1,39 @@
-import { Form } from "react-router-dom";
+import { Form, redirect } from "react-router-dom";
 
-export async function nuevaFacturaAction({ request, params }) {}
+export async function nuevaFacturaAction({ request, params }) {
+  // POST /api/facturas
+  // Body: { tipo: "C"|"E", fecha: "YYYY-MM-DD", destinatario: string, monto: number }
+  const method = request.method;
+  const data = await request.formData();
+  const facturaData = {
+    tipo: data.get("tipo_factura"),
+    fecha: data.get("fecha"),
+    destinatario: data.get("destinatario"),
+    monto: parseFloat(data.get("monto")),
+  };
+  const response = await fetch("/api/facturas", {
+    method: method,
+    body: JSON.stringify(facturaData),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!response || response.status === 422 || response.error) {
+    return new Response.json({ errors: response.error });
+  }
+  return redirect(`/facturas`);
+}
 
 const inputClass =
   "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
 
 const NuevaFactura = () => {
- const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <div className="max-w-md">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Nueva Factura</h1>
-      <Form className="bg-white rounded-lg shadow p-6 space-y-4">
+      <Form method="POST" className="bg-white rounded-lg shadow p-6 space-y-4">
         <div>
           <span className="block text-sm font-medium text-gray-700 mb-2">
             Tipo
@@ -21,6 +43,7 @@ const NuevaFactura = () => {
               <input
                 type="radio"
                 name="tipo_factura"
+                id="tipo_factura_c"
                 value="C"
                 className="accent-blue-600"
               />
@@ -30,6 +53,7 @@ const NuevaFactura = () => {
               <input
                 type="radio"
                 name="tipo_factura"
+                id="tipo_factura_e"
                 value="E"
                 className="accent-blue-600"
               />

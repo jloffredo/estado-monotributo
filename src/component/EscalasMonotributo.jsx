@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiFetchEscalas } from "../Helper/apiEscalas";
 
 const EscalasMonotributo = () => {
   const [escalas, setEscalas] = useState([]);
@@ -6,22 +7,17 @@ const EscalasMonotributo = () => {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchEscalas = useCallback(() => {
+  const fetchEscalas = useCallback(async () => {
+    let error = null;
+    let escala = null;
     setLoading(true);
     setError(null);
-    fetch("/api/escalas")
-      .then((res) => {
-        if (!res.ok) throw new Error(`Error ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        setEscalas(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
+    [escala, error] = await apiFetchEscalas();
+    setLoading(false);
+    if (escala) {
+      setEscalas(escala);
+    }
+    if (error) setError(error);
   }, []);
 
   useEffect(() => {
@@ -54,7 +50,9 @@ const EscalasMonotributo = () => {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Escalas Monotributo</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          Escalas Monotributo
+        </h1>
         <button
           onClick={sincronizar}
           disabled={syncing}
