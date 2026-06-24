@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiFetchFacturas } from "../Helper/apiFacturas";
 import { apiFetchEscalas } from "../Helper/apiEscalas";
+import Factura from "./Factura";
+import FacturaMensual from "./FacturaMensual";
 
 const Facturacion = () => {
   const [escalas, setEscalas] = useState([]);
@@ -65,8 +67,7 @@ const Facturacion = () => {
     acc[key] = (acc[key] ?? 0) + f.monto;
     return acc;
   }, {});
-  let mostrarFacturas = '';
-  facturas.map((factura) => {
+  let mostrarFacturas = facturas.map((factura) => {
       totalFacturado += factura.monto;
       let escalaActualIndex = escalasOrdenado.findIndex(
         (e) => e.ingresos_brutos_anuales_max >= totalFacturado,
@@ -77,7 +78,7 @@ const Facturacion = () => {
       montoProximaEscala = montoTotalEscala
         ? montoTotalEscala - totalFacturado
         : 0.0;
-      mostrarFacturas+= JSON.stringify(factura);
+      return (<Factura key={factura.id} factura={factura}/>);
     });
   return (
     <>
@@ -91,7 +92,11 @@ const Facturacion = () => {
           <div className="bg-white rounded-lg shadow p-6 text-gray-500">
             {mostrarFacturas}
           </div>
-          <div> {JSON.stringify(totalesPorMes)}</div>
+          <div>
+            {Object.entries(totalesPorMes).map(([mes, totalMensual]) => {
+              return <FacturaMensual key={mes} mes={mes} total={totalMensual} />;
+            })}
+          </div>
           <div> Total Facturado: {totalFacturado.toFixed(2)}</div>
           <div>
             Escala Actual: {escalaActual} - Monto: {montoTotalEscala.toFixed(2)}
