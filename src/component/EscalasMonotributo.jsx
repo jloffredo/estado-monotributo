@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetchEscalas } from "../Helper/apiEscalas";
+import { formatARS } from "../Helper/formatHelper";
 
 const EscalasMonotributo = () => {
   const [escalas, setEscalas] = useState([]);
@@ -92,10 +93,10 @@ const EscalasMonotributo = () => {
                     {e.categoria}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-600">
-                    {e.ingresos_brutos_anuales_max}
+                    {formatARS(e.ingresos_brutos_anuales_max)}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-600">
-                    {e.cuota_total_locaciones_y_servicios}
+                    {formatARS(e.cuota_total_locaciones_y_servicios)}
                   </td>
                 </tr>
               ))}
