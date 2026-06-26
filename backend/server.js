@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { obtenerCategoriasMonotributo } from "./afip-scrapper.js";
-import { upsertEscalas, getEscalas, insertFactura, getFacturas } from "./db.js";
+import { upsertEscalas, getEscalas, insertFactura, getFacturas, updateFactura, deleteFactura, getConfig, setConfig } from "./db.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -44,7 +44,7 @@ app.post("/api/escalas/sync", async (_req, res) => {
 // POST /api/facturas
 // Body: { tipo: "C"|"E", fecha: "YYYY-MM-DD", destinatario: string, monto: number }
 app.post("/api/facturas", (req, res) => {
-  const { tipo, fecha, destinatario, monto } = req.body;
+  const { tipo, fecha, cuit, destinatario, descripcion, monto } = req.body;
 
   if (!tipo || !["C", "E"].includes(tipo))
     return res.status(400).json({ error: 'tipo debe ser "C" o "E"' });
@@ -56,24 +56,106 @@ app.post("/api/facturas", (req, res) => {
 
   if (!destinatario || typeof destinatario !== "string" || !destinatario.trim())
     return res.status(400).json({ error: "destinatario es requerido" });
+  if (!cuit || typeof cuit !== "string" || !cuit.trim())
+    return res.status(400).json({ error: "cuit es requerido" });
+  if (!descripcion || typeof descripcion !== "string" || !descripcion.trim())
+    return res.status(400).json({ error: "descripcion es requerido" });
 
   if (typeof monto !== "number" || monto <= 0)
     return res.status(400).json({ error: "monto debe ser un número positivo" });
 
   try {
-    const result = insertFactura(tipo, fecha, destinatario.trim(), monto);
+    const result = insertFactura(
+      tipo,
+      fecha,
+      cuit.trim(),
+      destinatario.trim(),
+      descripcion.trim(),
+      monto,
+    );
     res.status(201).json({ id: result.lastInsertRowid });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET /api/facturas?modo=anual&anio=2024
+// PUT /api/facturas/:id
+app.put("/api/facturas/:id", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(400).json({ error: "id inválido" });
+
+  const { tipo, fecha, cuit, destinatario, descripcion, monto } = req.body;
+
+  if (!tipo || !["C", "E"].includes(tipo))
+    return res.status(400).json({ error: 'tipo debe ser "C" o "E"' });
+  if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha))
+    return res.status(400).json({ error: "fecha debe tener formato YYYY-MM-DD" });
+  if (!destinatario || typeof destinatario !== "string" || !destinatario.trim())
+    return res.status(400).json({ error: "destinatario es requerido" });
+  if (!cuit || typeof cuit !== "string" || !cuit.trim())
+    return res.status(400).json({ error: "cuit es requerido" });
+  if (!descripcion || typeof descripcion !== "string" || !descripcion.trim())
+    return res.status(400).json({ error: "descripcion es requerida" });
+  if (typeof monto !== "number" || monto <= 0)
+    return res.status(400).json({ error: "monto debe ser un número positivo" });
+
+  try {
+    const result = updateFactura(id, tipo, fecha, cuit.trim(), destinatario.trim(), descripcion.trim(), monto);
+    if (result.changes === 0) return res.status(404).json({ error: "Factura no encontrada" });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/facturas/:id
+app.delete("/api/facturas/:id", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(400).json({ error: "id inválido" });
+
+  try {
+    const result = deleteFactura(id);
+    if (result.changes === 0) return res.status(404).json({ error: "Factura no encontrada" });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/config
+app.get("/api/config", (_req, res) => {
+  try {
+    res.json(getConfig());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/config
+app.put("/api/config", (req, res) => {
+  const { modo } = req.body;
+  if (!modo || !["anual", "semestral"].includes(modo))
+    return res.status(400).json({ error: 'modo debe ser "anual" o "semestral"' });
+
+  try {
+    setConfig(modo);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/facturas?anio=2024[&modo=anual|semestral]
 // GET /api/facturas?modo=semestral&anio=2024   → 01/07/{anio-1} - 30/06/{anio}
 app.get("/api/facturas", (req, res) => {
-  const { modo, anio } = req.query;
+  const { anio } = req.query;
+  let { modo } = req.query;
 
-  if (!modo || !["anual", "semestral"].includes(modo))
+  if (!modo) {
+    modo = getConfig()?.modo ?? "anual";
+  }
+
+  if (!["anual", "semestral"].includes(modo))
     return res
       .status(400)
       .json({ error: 'modo debe ser "anual" o "semestral"' });

@@ -12,12 +12,22 @@ const Navegacion = () => {
         <div className="flex gap-6 list-none">
           <span>
             <NavLink to="/" className={linkClass} end>
-              Home
+              Dashboard
+            </NavLink>
+          </span>
+          <span>
+            <NavLink to="/escalas" className={linkClass} end>
+              Escalas Monotributo
             </NavLink>
           </span>
           <span>
             <NavLink to="/facturas" end className={linkClass}>
               Facturas
+            </NavLink>
+          </span>
+          <span>
+            <NavLink to="/facturas/importador" end className={linkClass}>
+              Importar CSV
             </NavLink>
           </span>
           <span>

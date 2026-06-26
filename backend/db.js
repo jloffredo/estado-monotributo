@@ -33,11 +33,20 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tipo TEXT NOT NULL CHECK(tipo IN ('C', 'E')),
     fecha DATE NOT NULL,
+    cuit TEXT NOT NULL,
     destinatario TEXT NOT NULL,
+    descripcion TEXT NOT NULL,
     monto REAL NOT NULL,
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS config (
+    id INTEGER PRIMARY KEY CHECK(id = 1),
+    modo TEXT NOT NULL CHECK(modo IN ('anual', 'semestral')) DEFAULT 'anual'
+  );
 `);
+
+db.prepare(`INSERT OR IGNORE INTO config (id, modo) VALUES (1, 'anual')`).run();
 
 const stmtUpsertEscala = db.prepare(`
   INSERT INTO escalas (
@@ -111,13 +120,13 @@ export function getEscalas() {
     .all();
 }
 
-export function insertFactura(tipo, fecha, destinatario, monto) {
+export function insertFactura(tipo, fecha,cuit, destinatario, descripcion, monto) {
   return db
     .prepare(
-      `INSERT INTO facturas (tipo, fecha, destinatario, monto)
-       VALUES (?, ?, ?, ?)`
+      `INSERT INTO facturas (tipo, fecha,cuit, destinatario, descripcion, monto)
+       VALUES (?, ?, ?,?,?, ?)`
     )
-    .run(tipo, fecha, destinatario, monto);
+    .run(tipo, fecha, cuit, destinatario, descripcion, monto);
 }
 
 export function getFacturas(desde, hasta) {
@@ -129,4 +138,26 @@ export function getFacturas(desde, hasta) {
        ORDER BY fecha`
     )
     .all(desde, hasta);
+}
+
+export function updateFactura(id, tipo, fecha, cuit, destinatario, descripcion, monto) {
+  return db
+    .prepare(
+      `UPDATE facturas
+       SET tipo = ?, fecha = ?, cuit = ?, destinatario = ?, descripcion = ?, monto = ?
+       WHERE id = ?`
+    )
+    .run(tipo, fecha, cuit, destinatario, descripcion, monto, id);
+}
+
+export function deleteFactura(id) {
+  return db.prepare(`DELETE FROM facturas WHERE id = ?`).run(id);
+}
+
+export function getConfig() {
+  return db.prepare(`SELECT modo FROM config WHERE id = 1`).get();
+}
+
+export function setConfig(modo) {
+  return db.prepare(`UPDATE config SET modo = ? WHERE id = 1`).run(modo);
 }

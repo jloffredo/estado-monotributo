@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { apiFetchFacturas } from "../Helper/apiFacturas";
-import { apiFetchEscalas } from "../Helper/apiEscalas";
 import Factura from "./Factura";
 import FacturaMensual from "./FacturaMensual";
+import { getDashboardInfo } from "../Helper/dashBoardHelper";
+import { formatARS } from "../Helper/formatHelper";
 
 const Facturacion = () => {
   const [escalas, setEscalas] = useState([]);
@@ -11,44 +11,51 @@ const Facturacion = () => {
   const [facturas, setFacturas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  let totalFacturado = 0.0;
-  let escalaActual = "A";
-  let montoProximaEscala = 0.0;
-  let montoTotalProximaEscala = 0;
-  let montoTotalEscala = 0;
-  const fetchEscalas = useCallback(async () => {
-    let error = null;
-    let escala = null;
-    setLoading(true);
-    setError(null);
-    [escala, error] = await apiFetchEscalas();
-    setLoading(false);
-    if (escala) {
-      setEscalas(escala);
-    }
-    if (error) setError(error);
-  }, []);
+  const [escalaActual, setEscalaActual] = useState("A");
+  const [montoTotalEscala, setMontoTotalEscala] = useState(0);
+  const [montoProximaEscala, setMontoProximaEscala] = useState(0);
+  const [totalFacturado, setTotalFacturado] = useState(0);
+  const [totalesPorMes, setTotalesPorMes] = useState({});
 
-  const fetchFacturas = useCallback(async () => {
+  const fetchInformation = useCallback(async () => {
     let facturas = null;
     let error = null;
+    let escalasOrdenado = null;
+    let escalaActualTmp = "A";
+    let montoProximaEscalaTmp = 0.0;
+    let montoTotalEscalaTmp = 0;
+    let totalFacturadoTmp = 0;
+    let totalesPorMesTmp = null;
     setLoading(true);
     setError(null);
-    [facturas, error] = await apiFetchFacturas();
+    [
+      facturas,
+      escalasOrdenado,
+      totalFacturadoTmp,
+      escalaActualTmp,
+      montoTotalEscalaTmp,
+      montoProximaEscalaTmp,
+      totalesPorMesTmp,
+      error,
+    ] = await getDashboardInfo();
     setLoading(false);
     if (error) setError(error);
-    if (facturas) {
-      await fetchEscalas();
-      setFacturas(facturas);
-    }
-  }, [fetchEscalas]);
+    setFacturas(facturas);
+    setEscalas(escalasOrdenado);
+    setTotalFacturado(totalFacturadoTmp);
+    setEscalaActual(escalaActualTmp);
+    setMontoTotalEscala(montoTotalEscalaTmp);
+    setMontoProximaEscala(montoProximaEscalaTmp);
+    setTotalesPorMes(totalesPorMesTmp);
+  }, []);
 
   useEffect(() => {
-    fetchFacturas();
-  }, [fetchFacturas]);
-  const escalasOrdenado = [...escalas].sort(
-    (a, b) => a.ingresos_brutos_anuales_max - b.ingresos_brutos_anuales_max,
-  );
+    fetchInformation();
+  }, [fetchInformation]);
+
+  let mostrarFacturas = facturas?.map((factura) => {
+    return <Factura key={factura.id} factura={factura} />;
+  });
   if (loading)
     return (
       <div className="flex justify-center items-center py-16">
@@ -62,24 +69,7 @@ const Facturacion = () => {
         Error: {error}
       </div>
     );
-  const totalesPorMes = facturas.reduce((acc, f) => {
-    const key = f.fecha.slice(0, 7); // "YYYY-MM"
-    acc[key] = (acc[key] ?? 0) + f.monto;
-    return acc;
-  }, {});
-  let mostrarFacturas = facturas.map((factura) => {
-      totalFacturado += factura.monto;
-      let escalaActualIndex = escalasOrdenado.findIndex(
-        (e) => e.ingresos_brutos_anuales_max >= totalFacturado,
-      );
-      escalaActual = escalasOrdenado[escalaActualIndex]?.categoria;
-      montoTotalEscala =
-        escalasOrdenado[escalaActualIndex]?.ingresos_brutos_anuales_max;
-      montoProximaEscala = montoTotalEscala
-        ? montoTotalEscala - totalFacturado
-        : 0.0;
-      return (<Factura key={factura.id} factura={factura}/>);
-    });
+
   return (
     <>
       {facturas?.length === 0 ? (
@@ -94,14 +84,33 @@ const Facturacion = () => {
           </div>
           <div>
             {Object.entries(totalesPorMes).map(([mes, totalMensual]) => {
-              return <FacturaMensual key={mes} mes={mes} total={totalMensual} />;
+              return (
+                <FacturaMensual key={mes} mes={mes} total={totalMensual} />
+              );
             })}
           </div>
-          <div> Total Facturado: {totalFacturado.toFixed(2)}</div>
-          <div>
-            Escala Actual: {escalaActual} - Monto: {montoTotalEscala.toFixed(2)}
+          <div className="mt-4 bg-white rounded-lg shadow p-6 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Total facturado</span>
+              <span className="text-lg font-bold text-gray-800">
+                {formatARS(totalFacturado)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center border-t border-gray-100 pt-3">
+              <span className="text-sm text-gray-500">Categoría actual</span>
+              <span className="font-semibold text-gray-800">
+                {escalaActual} — {formatARS(montoTotalEscala)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center border-t border-gray-100 pt-3">
+              <span className="text-sm text-gray-500">
+                Resta para próxima categoría
+              </span>
+              <span className="font-semibold text-blue-600">
+                {formatARS(montoProximaEscala)}
+              </span>
+            </div>
           </div>
-          <div> Monto para proxima escala: {montoProximaEscala.toFixed(2)}</div>
         </div>
       )}
     </>

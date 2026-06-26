@@ -1,7 +1,7 @@
 export function apiFetchFacturas() {
   const today = new Date();
 
-  return fetch(`/api/facturas?modo=semestral&anio=${today.getFullYear()}`)
+  return fetch(`/api/facturas?anio=${today.getFullYear()}`)
     .then((res) => {
       if (!res.ok) throw new Error(`Error ${res.status}`);
       return res.json();
