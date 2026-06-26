@@ -44,7 +44,7 @@ app.post("/api/escalas/sync", async (_req, res) => {
 // POST /api/facturas
 // Body: { tipo: "C"|"E", fecha: "YYYY-MM-DD", destinatario: string, monto: number }
 app.post("/api/facturas", (req, res) => {
-  const { tipo, fecha, cuit, destinatario, descripcion, monto } = req.body;
+  const { tipo, nro_comprobante, fecha, cuit, destinatario, descripcion, monto } = req.body;
 
   if (!tipo || !["C", "E"].includes(tipo))
     return res.status(400).json({ error: 'tipo debe ser "C" o "E"' });
@@ -61,12 +61,20 @@ app.post("/api/facturas", (req, res) => {
   if (!descripcion || typeof descripcion !== "string" || !descripcion.trim())
     return res.status(400).json({ error: "descripcion es requerido" });
 
+  if (
+    !nro_comprobante ||
+    typeof nro_comprobante !== "string" ||
+    !nro_comprobante.trim()
+  )
+    return res.status(400).json({ error: "nro comprobante es requerido" });
+
   if (typeof monto !== "number" || monto <= 0)
     return res.status(400).json({ error: "monto debe ser un número positivo" });
 
   try {
     const result = insertFactura(
       tipo,
+      nro_comprobante,
       fecha,
       cuit.trim(),
       destinatario.trim(),

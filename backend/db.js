@@ -31,6 +31,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS facturas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    comprobante TEXT NOT NULL UNIQUE,
     tipo TEXT NOT NULL CHECK(tipo IN ('C', 'E')),
     fecha DATE NOT NULL,
     cuit TEXT NOT NULL,
@@ -120,13 +121,13 @@ export function getEscalas() {
     .all();
 }
 
-export function insertFactura(tipo, fecha,cuit, destinatario, descripcion, monto) {
+export function insertFactura(tipo,nro_comprobante, fecha,cuit, destinatario, descripcion, monto) {
   return db
     .prepare(
-      `INSERT INTO facturas (tipo, fecha,cuit, destinatario, descripcion, monto)
-       VALUES (?, ?, ?,?,?, ?)`
+      `INSERT INTO facturas (tipo, comprobante, fecha,cuit, destinatario, descripcion, monto)
+       VALUES (?,?, ?, ?,?,?, ?)`
     )
-    .run(tipo, fecha, cuit, destinatario, descripcion, monto);
+    .run(tipo, nro_comprobante, fecha, cuit, destinatario, descripcion, monto);
 }
 
 export function getFacturas(desde, hasta) {

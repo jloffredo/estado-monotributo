@@ -55,6 +55,7 @@ function rowToFactura(row) {
 
   return {
     tipo,
+    nro_comprobante: `${tipo} ${pv}-${num}`,
     fecha: row["Fecha de Emisión"],
     cuit: row["Nro. Doc. Receptor"],
     destinatario: row["Denominación Receptor"],
